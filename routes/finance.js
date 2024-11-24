@@ -9,7 +9,7 @@ const auth = require("../middleware/auth");
 // ===========================
 
 // Add a shopping item (creates a linked transaction)
-router.post("/shopping-items", auth(["parent"]), async (req, res) => {
+router.post("/shopping-items", auth(['parent'],true), async (req, res) => {
   try {
     const { name, category, priority, notes, cost } = req.body;
 
@@ -49,7 +49,7 @@ router.post("/shopping-items", auth(["parent"]), async (req, res) => {
 });
 
 // Get all shopping items for the user
-router.get("/shopping-items", auth(["parent"]), async (req, res) => {
+router.get("/shopping-items", auth(['parent'],true), async (req, res) => {
   try {
     const shoppingItems = await ShoppingItem.find({ user: req.user.id }).populate("transaction");
     res.status(200).json(shoppingItems);
@@ -60,7 +60,7 @@ router.get("/shopping-items", auth(["parent"]), async (req, res) => {
 });
 
 // Update a shopping item
-router.put("/shopping-items/:id", auth(["parent"]), async (req, res) => {
+router.put("/shopping-items/:id", auth(['parent'],true), async (req, res) => {
   try {
     const shoppingItem = await ShoppingItem.findOneAndUpdate(
       { _id: req.params.id, user: req.user.id },
@@ -91,7 +91,7 @@ router.put("/shopping-items/:id", auth(["parent"]), async (req, res) => {
 });
 
 // Delete a shopping item (also deletes linked transaction)
-router.delete("/shopping-items/:id", auth(["parent"]), async (req, res) => {
+router.delete("/shopping-items/:id", auth(['parent'],true), async (req, res) => {
   try {
     const shoppingItem = await ShoppingItem.findOneAndDelete({ _id: req.params.id, user: req.user.id });
     if (!shoppingItem) {
@@ -113,7 +113,7 @@ router.delete("/shopping-items/:id", auth(["parent"]), async (req, res) => {
 // =======================
 
 // Add a transaction
-router.post("/transactions", auth(["parent"]), async (req, res) => {
+router.post("/transactions", auth(['parent'],true), async (req, res) => {
   try {
     const { type, category, amount, description } = req.body;
 
@@ -137,7 +137,7 @@ router.post("/transactions", auth(["parent"]), async (req, res) => {
 });
 
 // Get all transactions for the user
-router.get("/transactions", auth(["parent"]), async (req, res) => {
+router.get("/transactions", auth(['parent'],true), async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user.id }).populate("relatedItems");
     res.status(200).json(transactions);
@@ -148,7 +148,7 @@ router.get("/transactions", auth(["parent"]), async (req, res) => {
 });
 
 // Update a transaction
-router.put("/transactions/:id", auth(["parent"]), async (req, res) => {
+router.put("/transactions/:id", auth(['parent'],true), async (req, res) => {
   try {
     const transaction = await Transaction.findOneAndUpdate(
       { _id: req.params.id, user: req.user.id },
@@ -166,7 +166,7 @@ router.put("/transactions/:id", auth(["parent"]), async (req, res) => {
 });
 
 // Delete a transaction
-router.delete("/transactions/:id", auth(["parent"]), async (req, res) => {
+router.delete("/transactions/:id", auth(['parent'],true), async (req, res) => {
   try {
     const transaction = await Transaction.findOneAndDelete({ _id: req.params.id, user: req.user.id });
     if (!transaction) {
@@ -188,7 +188,7 @@ router.delete("/transactions/:id", auth(["parent"]), async (req, res) => {
 // =======================
 
 // Get user's budget summary
-router.get("/summary", auth(["parent"]), async (req, res) => {
+router.get("/summary", auth(['parent'],true), async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user.id });
 

@@ -65,7 +65,7 @@ router.post('/child/tasks/:taskId/comment', childAuth, async (req, res) => {
 
 // Add Child
 // Get Weekly Summary for Tasks
-router.get('/weekly-summary', auth(['parent']), async (req, res) => {
+router.get('/weekly-summary', auth(['parent'],true), async (req, res) => {
   try {
     console.log('we are in the weekly summary ')
     const { childId } = req.query; // Allow filtering by child ID if needed
@@ -116,7 +116,7 @@ router.get('/weekly-summary', auth(['parent']), async (req, res) => {
 });
 
 // Add Task for a Child
-router.post('/add', auth(['parent']), async (req, res) => {
+router.post('/add', auth(['parent'],true), async (req, res) => {
     const { content, priority, childId } = req.body;
   
     console.log("Add Task Request Received: ", req.body);
@@ -158,7 +158,7 @@ router.post('/add', auth(['parent']), async (req, res) => {
     }
   });
   
-router.post('/add', auth(['parent']), async (req, res) => {
+router.post('/add', auth(['parent'],true), async (req, res) => {
     const { name, email, password, dob, grade } = req.body;
   
     console.log("Add Child Request Received: ", req.body);
@@ -201,7 +201,7 @@ router.post('/add', auth(['parent']), async (req, res) => {
   
 
 // Get All Tasks for a Child
-router.get('/:childId', auth(['parent']), async (req, res) => {
+router.get('/:childId', auth(['parent'],true), async (req, res) => {
   try {
     const tasks = await Task.find({ child: req.params.childId }).populate('child', 'name');
     res.json(tasks);
@@ -211,7 +211,7 @@ router.get('/:childId', auth(['parent']), async (req, res) => {
 });
 
 // Update Task Status
-router.put('/:taskId', auth(['parent']), async (req, res) => {
+router.put('/:taskId', auth(['parent'],true), async (req, res) => {
   const { status } = req.body;
 
   try {
@@ -234,7 +234,7 @@ router.put('/:taskId', auth(['parent']), async (req, res) => {
 });
 
 // Delete Task
-router.delete('/:taskId', auth(['parent']), async (req, res) => {
+router.delete('/:taskId', auth(['parent'],true), async (req, res) => {
   try {
     const task = await Task.findById(req.params.taskId);
     if (!task) {
@@ -253,7 +253,7 @@ router.delete('/:taskId', auth(['parent']), async (req, res) => {
   }
 });
 // Delete All Completed Tasks for a Child
-router.delete('/:childId/delete-completed', auth(['parent']), async (req, res) => {
+router.delete('/:childId/delete-completed', auth(['parent'],true), async (req, res) => {
     try {
       const tasks = await Task.find({ child: req.params.childId, status: "done" });
   
@@ -274,7 +274,7 @@ router.delete('/:childId/delete-completed', auth(['parent']), async (req, res) =
       res.status(500).json({ error: error.message });
     }
   });
-  router.post('/add-childx', auth(['parent']), async (req, res) => {
+  router.post('/add-childx', auth(['parent'],true), async (req, res) => {
     const { name, email, password, dob, grade } = req.body;
   
     console.log("Add Child Request Received: ", req.body);

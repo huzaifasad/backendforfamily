@@ -6,7 +6,7 @@ const auth = require("../middleware/auth");
 const router = express.Router();
 
 // **Get Weekly Meal Plan**
-router.get("/week", auth(["parent"]), async (req, res) => {
+router.get("/week", auth(['parent'],true), async (req, res) => {
   const { startDate, endDate } = req.query;
 
   try {
@@ -25,7 +25,7 @@ router.get("/week", auth(["parent"]), async (req, res) => {
 
 
 // **Add or Update Meal**
-router.put("/:date", auth(["parent"]), async (req, res) => {
+router.put("/:date", auth(['parent'],true), async (req, res) => {
   const { date } = req.params;
   const { breakfast, lunch, dinner } = req.body;
 
@@ -78,7 +78,7 @@ const getTodayMeals = async (userId) => {
   }
 };
 
-router.get("/today", auth(["parent"]), async (req, res) => {
+router.get("/today", auth(['parent'],true), async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of the day
@@ -104,7 +104,7 @@ router.get("/today", auth(["parent"]), async (req, res) => {
 });
 
 // **Delete Meal**
-router.delete("/:date", auth(["parent"]), async (req, res) => {
+router.delete("/:date", auth(['parent'],true), async (req, res) => {
   const { date } = req.params;
 
   try {

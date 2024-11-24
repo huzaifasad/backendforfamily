@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const router = express.Router();
 
 // Add Reward for a Child
-router.post('/add', auth(['parent']), async (req, res) => {
+router.post('/add', auth(['parent'],true), async (req, res) => {
   const { title, description, points, childId } = req.body;
   console.log('Request Body:', req.body); // Log incoming data
   console.log('we are in add reward'); // Debug log
@@ -41,7 +41,7 @@ router.post('/add', auth(['parent']), async (req, res) => {
 
 
 // Get Rewards for a Child
-router.get('/:childId', auth(['parent']), async (req, res) => {
+router.get('/:childId', auth(['parent'],true), async (req, res) => {
   try {
     console.log("Child ID:", req.params.childId); // Debug log
     const rewards = await Reward.find({ child: req.params.childId });
@@ -55,7 +55,7 @@ router.get('/:childId', auth(['parent']), async (req, res) => {
 
 
 // Edit Reward
-router.put('/edit/:rewardId', auth(['parent']), async (req, res) => {
+router.put('/edit/:rewardId', auth(['parent'],true), async (req, res) => {
   const { title, description, points } = req.body;
   const { rewardId } = req.params;
   if (!mongoose.Types.ObjectId.isValid(rewardId)) {
@@ -81,7 +81,7 @@ router.put('/edit/:rewardId', auth(['parent']), async (req, res) => {
 });
 
 // Redeem Reward
-router.put('/:rewardId/redeem', auth(['parent']), async (req, res) => {
+router.put('/:rewardId/redeem', auth(['parent'],true), async (req, res) => {
   try {
     const reward = await Reward.findById(req.params.rewardId);
     if (!reward) {
