@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ChildSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, unique: true, required: true },
+  email: { type: String,required: true },
   password: { type: String, required: true }, // Plain text password for simplicity
   dob: { type: Date, required: true },
   grade: { type: String },
@@ -10,6 +10,8 @@ const ChildSchema = new mongoose.Schema({
   parentUsername: { type: String, required: true }, // Stores the parent's username
   profilePicture: { type: String }, // URL or path for profile picture
   role: { type: String, default: 'child' }, // Always "child"
+  points: { type: Number, default: 0 }, // Points counter
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Child', ChildSchema);

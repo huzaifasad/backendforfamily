@@ -6,7 +6,9 @@ const auth = require("../middleware/auth"); // Middleware for authentication
 
 // Route to create a Stripe Checkout Session
 router.post("/create-checkout-session", auth(["parent"]), async (req, res) => {
-  const { priceId } = req.body;
+  const { priceId, subscriptionPlan } = req.body; // Expecting priceId and subscriptionPlan from frontend
+
+  // const { priceId } = req.body;
   console.log("Received request to create checkout session.");
   console.log("Price ID received:", priceId);
 
@@ -25,6 +27,8 @@ router.post("/create-checkout-session", auth(["parent"]), async (req, res) => {
       ],
       metadata: {
         userId: userId.toString(),
+        subscriptionPlan: subscriptionPlan || "unknown", // Store the plan selected by the user
+
       },
       success_url: `${process.env.CLIENT_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/cancel`,

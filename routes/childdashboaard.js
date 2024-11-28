@@ -1,140 +1,141 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const Task = require('../models/Task');
-const authx = require('../middleware/childauth');
+const Child = require('../models/Child');
+const User = require('../models/User');
+const auth = require('../middleware/auth');
+
 const router = express.Router();
 
-// Middleware to verify child login
-const childAuth = authx(['child']);
+// 1. Parent Login
+router.post('/parent/login', async (req, res) => {
+    const { email, password } = req.body;
+    console.log("Parent login request received:", { email });
 
-// 1. Get All Tasks for the Logged-In Child
-router.get('/tasks', childAuth, async (req, res) => {
-    console.log('Child ID from Token:', req.user.id);
     try {
-        const tasks = await Task.find({ child: req.user.id }).sort({ createdAt: -1 });
-        console.log('Fetched Tasks:', tasks);
+        const user = await User.findOne({ email, role: 'parent' });
+        console.log("Parent user found:", user);
 
-        if (tasks.length === 0) {
-            console.log('No tasks found for this child.');
+        if (!user || user.password !== password) {
+            console.error("Invalid credentials for user:", { email });
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        res.status(200).json({ message: 'Tasks fetched successfully', tasks });
+        const token = jwt.sign({ id: user._id, role: 'parent' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        console.log("JWT token generated for user:", { userId: user._id });
+
+        res.json({ token, user });
     } catch (error) {
-        console.error('Error fetching tasks:', error.message);
-        res.status(500).json({ message: 'Error fetching tasks', error: error.message });
+        console.error('Error in parent login:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
-// 2. Get Completed Tasks for the Logged-In Child
-router.get('/tasks/completed', childAuth, async (req, res) => {
-    console.log(`Request to fetch completed tasks for childId: ${req.user.id}`);
+// 2. Get All Children of a Parent
+router.get('/parent/children', auth(['parent']), async (req, res) => {
+    console.log("Fetching children for parent:", req.user.id);
+
     try {
-        const tasks = await Task.find({ childId: req.user.id, status: 'done' }).sort({ updatedAt: -1 });
-        console.log(`Completed tasks fetched successfully for childId: ${req.user.id}`, tasks);
+        const children = await Child.find({ parent: req.user.id }).select('-password');
+        console.log("Children fetched:", children);
 
-        if (tasks.length === 0) {
-            console.log('No completed tasks found for this child.');
-        }
-
-        res.status(200).json({ message: 'Completed tasks fetched successfully', tasks });
+        res.json(children);
     } catch (error) {
-        console.error('Error fetching completed tasks:', error.message);
-        res.status(500).json({ message: 'Error fetching completed tasks', error: error.message });
+        console.error('Error fetching children:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
-// 3. Get Pending (Not Completed) Tasks for the Logged-In Child
-router.get('/tasks/pending', childAuth, async (req, res) => {
-    console.log(`Request to fetch pending tasks for childId: ${req.user.id}`);
+// 3. Get All Tasks for a Child
+router.get('/parent/children', auth(['parent']), async (req, res) => {
+    console.log("Fetching children for parent:", req.user.id);
+
     try {
-        const tasks = await Task.find({ childId: req.user.id, status: { $ne: 'done' } }).sort({ createdAt: -1 });
-        console.log(`Pending tasks fetched successfully for childId: ${req.user.id}`, tasks);
+        const children = await Child.find({ parent: req.user.id }).select('-password');
+        console.log("Children fetched for parent:", req.user.id, children);
 
-        if (tasks.length === 0) {
-            console.log('No pending tasks found for this child.');
-        }
-
-        res.status(200).json({ message: 'Pending tasks fetched successfully', tasks });
+        res.json(children);
     } catch (error) {
-        console.error('Error fetching pending tasks:', error.message);
-        res.status(500).json({ message: 'Error fetching pending tasks', error: error.message });
+        console.error('Error fetching children:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
-// 4. Mark a Task as Completed
-router.put('/tasks/:taskId/complete', childAuth, async (req, res) => {
-  const mongoose = require('mongoose');
-  
-  try {
-      // Convert `req.user.id` to ObjectId
-      const childId = new mongoose.Types.ObjectId(req.user.id); // Correct usage
-      console.log('Child ID:', childId);
 
-      // Find and update the task
-      const task = await Task.findOneAndUpdate(
-          { _id: req.params.taskId, child: childId },
-          { status: 'done' },
-          { new: true }
-      );
+// 4. Update Task Status
+router.put('/parent/tasks/:taskId', auth(['parent']), async (req, res) => {
+    const { status } = req.body;
+    console.log("Updating task status:", { taskId: req.params.taskId, status });
 
-      if (!task) {
-          console.log('Task not found or unauthorized access', { taskId: req.params.taskId, childId });
-          return res.status(404).json({ message: 'Task not found or unauthorized access' });
-      }
-
-      console.log('Updated Task:', task);
-      res.status(200).json({ message: 'Task marked as completed', task });
-  } catch (error) {
-      console.error('Error marking task as completed:', error.message);
-      res.status(500).json({ message: 'Error marking task as completed', error: error.message });
-  }
-});
-
-
-// 5. Add Comment to a Task
-router.post('/tasks/:taskId/comment', childAuth, async (req, res) => {
-    console.log(`Request to add comment to taskId: ${req.params.taskId}, childId: ${req.user.id}`);
     try {
-        const { comment } = req.body;
-        if (!comment) {
-            console.log(`Empty comment received for taskId: ${req.params.taskId}`);
-            return res.status(400).json({ message: 'Comment cannot be empty' });
-        }
-
-        const task = await Task.findOneAndUpdate(
-            { _id: req.params.taskId, childId: req.user.id },
-            { $push: { comments: comment } },
-            { new: true }
-        );
+        const task = await Task.findById(req.params.taskId);
+        console.log("Task found for update:", task);
 
         if (!task) {
-            console.log(`Task not found or unauthorized access for taskId: ${req.params.taskId}`);
-            return res.status(404).json({ message: 'Task not found or unauthorized access' });
+            console.error("Task not found:", { taskId: req.params.taskId });
+            return res.status(404).json({ message: 'Task not found' });
         }
 
-        console.log(`Comment added to taskId: ${req.params.taskId}`, task);
-        res.status(200).json({ message: 'Comment added successfully', task });
+        task.status = status;
+        task.completedAt = status === 'done' ? new Date() : null;
+        await task.save();
+
+        console.log("Task updated successfully:", task);
+        res.json(task);
     } catch (error) {
-        console.error('Error adding comment to task:', error.message);
-        res.status(500).json({ message: 'Error adding comment', error: error.message });
+        console.error('Error updating task:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
-// 6. Delete a Task (Optional, if allowed for children)
-router.delete('/tasks/:taskId', childAuth, async (req, res) => {
-    console.log(`Request to delete task for taskId: ${req.params.taskId}, childId: ${req.user.id}`);
-    try {
-        const task = await Task.findOneAndDelete({ _id: req.params.taskId, childId: req.user.id });
+// 5. Get Rewards for a Child
+router.get('/parent/child/:childId/rewards', auth(['parent']), async (req, res) => {
+    console.log("Fetching rewards for child:", req.params.childId);
 
-        if (!task) {
-            console.log(`Task not found or unauthorized access for taskId: ${req.params.taskId}`);
-            return res.status(404).json({ message: 'Task not found or unauthorized access' });
+    try {
+        const child = await Child.findById(req.params.childId).populate('rewards');
+        console.log("Child fetched with rewards:", child);
+
+        if (!child) {
+            console.error("Child not found:", { childId: req.params.childId });
+            return res.status(404).json({ message: 'Child not found' });
         }
 
-        console.log(`Task deleted successfully for taskId: ${req.params.taskId}`, task);
-        res.status(200).json({ message: 'Task deleted successfully', task });
+        res.json(child.rewards);
     } catch (error) {
-        console.error('Error deleting task:', error.message);
-        res.status(500).json({ message: 'Error deleting task', error: error.message });
+        console.error('Error fetching rewards:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 6. Assign Task to a Child
+router.post('/parent/child/:childId/tasks', auth(['parent']), async (req, res) => {
+    const { content, priority, dueDate } = req.body;
+    console.log("Assigning task to child:", { childId: req.params.childId, content, priority, dueDate });
+
+    try {
+        const child = await Child.findById(req.params.childId);
+        console.log("Child found for task assignment:", child);
+
+        if (!child) {
+            console.error("Child not found:", { childId: req.params.childId });
+            return res.status(404).json({ message: 'Child not found' });
+        }
+
+        const task = new Task({
+            content,
+            priority,
+            dueDate,
+            child: req.params.childId,
+            user: req.user.id,
+        });
+        await task.save();
+
+        console.log("Task assigned successfully:", task);
+        res.status(201).json(task);
+    } catch (error) {
+        console.error('Error creating task:', error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
